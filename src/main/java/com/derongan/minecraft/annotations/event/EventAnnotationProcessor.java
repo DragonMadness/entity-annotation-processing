@@ -90,7 +90,7 @@ public class EventAnnotationProcessor extends AbstractProcessor {
             JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(a.getEnclosingElement());
 
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, String.format("Generating event handlers for %s", classDecl.getSimpleName().toString()));
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Ignoring events: " + ignoredClassNames.toString());
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Ignoring events: " + ignoredClassNames);
 
             JCTree.JCExpression voidExpression = maker.TypeIdent(TypeTag.VOID);
 
@@ -141,7 +141,7 @@ public class EventAnnotationProcessor extends AbstractProcessor {
 
             List<JCTree> list = classDecl.defs;
 
-            java.util.List<JCTree> newList = new ArrayList<JCTree>(list);
+            java.util.List<JCTree> newList = new ArrayList<>(list);
             newList.addAll(added);
 
             classDecl.defs = List.from(newList);
