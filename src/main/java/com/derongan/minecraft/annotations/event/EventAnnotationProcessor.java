@@ -75,13 +75,12 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .map(elementValuesWithDefaults::get).findAny().get();
 
             // OH god the crap
-            Set<String> ignoredClassNames = ((List<String>) value.getValue())
+            Set<String> ignoredClassNames = ((List<Attribute.Constant>) value.getValue())
                     .stream()
-                    .map(b -> {
-                        int last = b.lastIndexOf(".");
-                        return b.substring(0, last);
-                    })
+                    .map(Attribute.Constant::getValue)
+                    .map(b -> (String) b)
                     .collect(Collectors.toSet());
+            System.out.println(ignoredClassNames);
 
 
             JCTree.JCMethodDecl toExecute = (JCTree.JCMethodDecl) trees.getTree(a);
