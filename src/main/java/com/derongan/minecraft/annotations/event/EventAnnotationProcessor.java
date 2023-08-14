@@ -25,6 +25,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -108,7 +109,7 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .scan()
                     .getClassInfo(type.toString())
                     .getSubclasses()
-                    .filter(info -> !ignoredClassNames.contains(info.getName()))
+                    .filter(info -> !collectionContainsStringIgnoreCase(ignoredClassNames, info.getName()))
                     .filter(info -> !info.isAbstract());
 
             if (!includeDeprecated) {
@@ -163,5 +164,9 @@ public class EventAnnotationProcessor extends AbstractProcessor {
 
     private String lowercaseFirstLetter(String str) {
         return str.substring(0, 1).toLowerCase() + str.substring(1);
+    }
+
+    private boolean collectionContainsStringIgnoreCase(Collection<String> collection, String s) {
+        return collection.stream().anyMatch(n -> n.equalsIgnoreCase(s));
     }
 }
