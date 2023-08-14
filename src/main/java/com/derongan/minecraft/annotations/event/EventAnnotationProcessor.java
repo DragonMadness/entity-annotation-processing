@@ -75,9 +75,8 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .map(elementValuesWithDefaults::get).findAny().get();
 
             // OH god the crap
-            Set<String> ignoredClassNames = ((List<com.sun.tools.javac.code.Attribute.Class>) value.getValue())
+            Set<String> ignoredClassNames = ((List<String>) value.getValue())
                     .stream()
-                    .map(Attribute.Class::toString)
                     .map(b -> {
                         int last = b.lastIndexOf(".");
                         return b.substring(0, last);
