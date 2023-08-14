@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 public @interface ExpandEventHandler {
     boolean includeDeprecated() default false;
-    Class<? extends Event>[] exclude() default {};
+    String[] exclude() default {};
 }
