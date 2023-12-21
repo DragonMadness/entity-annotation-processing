@@ -6,7 +6,7 @@
 
     <groupId>com.derongan.minecraft</groupId>
     <artifactId>entity-annotation-processing</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.5</version>
     <packaging>jar</packaging>
 
     <name>entity-annotation-processing</name>

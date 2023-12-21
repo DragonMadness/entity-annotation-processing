@@ -109,7 +109,8 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .scan()
                     .getClassInfo(type.toString())
                     .getSubclasses()
-                    .filter(info -> !collectionContainsStringIgnoreCase(ignoredClassNames, info.getName()))
+                    .filter(info -> !collectionContainsStringIgnoreCase(ignoredClassNames, info.getSimpleName()))
+                    .filter(info -> info.getPackageName().startsWith("org.bukkit.event"))
                     .filter(info -> !info.isAbstract());
 
             if (!includeDeprecated) {
