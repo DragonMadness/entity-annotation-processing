@@ -63,30 +63,41 @@ public class EventAnnotationProcessor extends AbstractProcessor {
     }
 
     private void processAnnotation(TypeElement annotation, RoundEnvironment roundEnvironment) {
-        roundEnvironment.getElementsAnnotatedWith(annotation).forEach(a -> {
-            boolean includeDeprecated = a.getAnnotation(ExpandEventHandler.class).includeDeprecated();
+        roundEnvironment.getElementsAnnotatedWith(annotation).forEach(element -> {
+            boolean includeDeprecated = element.getAnnotation(ExpandEventHandler.class).includeDeprecated();
 
-            AnnotationMirror mirror = a.getAnnotationMirrors().stream().filter(b -> b.getAnnotationType().toString().equals(ExpandEventHandler.class.getName())).findAny().get();
+            AnnotationMirror mirror = element.getAnnotationMirrors().stream().filter(b -> b.getAnnotationType().toString().equals(ExpandEventHandler.class.getName())).findAny().get();
             Map<? extends ExecutableElement, ? extends AnnotationValue> elementValuesWithDefaults = processingEnv.getElementUtils().getElementValuesWithDefaults(mirror);
 
 
-            AnnotationValue value = elementValuesWithDefaults.keySet()
+            AnnotationValue excludedClassnames = elementValuesWithDefaults.keySet()
                     .stream()
-                    .filter(b -> b.getSimpleName().toString().equals("exclude"))
+                    .filter(b -> b.getSimpleName().toString().equals("excludedClassnames"))
+                    .map(elementValuesWithDefaults::get).findAny().get();
+
+            AnnotationValue excludedPackages = elementValuesWithDefaults.keySet()
+                    .stream()
+                    .filter(b -> b.getSimpleName().toString().equals("excludedPackages"))
                     .map(elementValuesWithDefaults::get).findAny().get();
 
             // OH god the crap
-            Set<String> ignoredClassNames = ((List<Attribute.Constant>) value.getValue())
+            Set<String> ignoredClassNames = ((List<Attribute.Constant>) excludedClassnames.getValue())
                     .stream()
                     .map(Attribute.Constant::getValue)
                     .map(b -> (String) b)
                     .collect(Collectors.toSet());
             System.out.println(ignoredClassNames);
 
+            Set<String> ignoredPackages = ((List<Attribute.Constant>) excludedClassnames.getValue())
+                    .stream()
+                    .map(Attribute.Constant::getValue)
+                    .map(b -> (String) b)
+                    .collect(Collectors.toSet());
+            System.out.println(ignoredClassNames);
 
-            JCTree.JCMethodDecl toExecute = (JCTree.JCMethodDecl) trees.getTree(a);
+            JCTree.JCMethodDecl toExecute = (JCTree.JCMethodDecl) trees.getTree(element);
 
-            JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(a.getEnclosingElement());
+            JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(element.getEnclosingElement());
 
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, String.format("Generating event handlers for %s", classDecl.getSimpleName().toString()));
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Ignoring events: " + ignoredClassNames);
@@ -100,7 +111,7 @@ public class EventAnnotationProcessor extends AbstractProcessor {
 
             final Name eventName = names.fromString("event");
 
-            TypeMirror type = ((ExecutableType) a.asType()).getParameterTypes().get(0);
+            TypeMirror type = ((ExecutableType) element.asType()).getParameterTypes().get(0);
 
             ClassInfoList events = new ClassGraph()
                     .enableClassInfo()
@@ -110,7 +121,7 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .getClassInfo(type.toString())
                     .getSubclasses()
                     .filter(info -> !collectionContainsStringIgnoreCase(ignoredClassNames, info.getSimpleName()))
-                    .filter(info -> info.getPackageName().startsWith("org.bukkit.event"))
+                    .filter(info -> ignoredPackages.stream().anyMatch(pack -> info.getPackageName().startsWith(pack)))
                     .filter(info -> !info.isAbstract());
 
             if (!includeDeprecated) {
