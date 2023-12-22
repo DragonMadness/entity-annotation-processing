@@ -70,37 +70,37 @@ public class EventAnnotationProcessor extends AbstractProcessor {
             Map<? extends ExecutableElement, ? extends AnnotationValue> elementValuesWithDefaults = processingEnv.getElementUtils().getElementValuesWithDefaults(mirror);
 
 
-            AnnotationValue excludedClassnames = elementValuesWithDefaults.keySet()
+            AnnotationValue rawExcludedClassnames = elementValuesWithDefaults.keySet()
                     .stream()
                     .filter(b -> b.getSimpleName().toString().equals("excludedClassnames"))
                     .map(elementValuesWithDefaults::get).findAny().get();
 
-            AnnotationValue excludedPackages = elementValuesWithDefaults.keySet()
+            AnnotationValue rawIncludedPackages = elementValuesWithDefaults.keySet()
                     .stream()
                     .filter(b -> b.getSimpleName().toString().equals("excludedPackages"))
                     .map(elementValuesWithDefaults::get).findAny().get();
 
             // OH god the crap
-            Set<String> ignoredClassNames = ((List<Attribute.Constant>) excludedClassnames.getValue())
+            Set<String> excludedClassnames = ((List<Attribute.Constant>) rawExcludedClassnames.getValue())
                     .stream()
                     .map(Attribute.Constant::getValue)
                     .map(b -> (String) b)
                     .collect(Collectors.toSet());
-            System.out.println(ignoredClassNames);
+            System.out.println(excludedClassnames);
 
-            Set<String> ignoredPackages = ((List<Attribute.Constant>) excludedClassnames.getValue())
+            Set<String> includedPackages = ((List<Attribute.Constant>) rawIncludedPackages.getValue())
                     .stream()
                     .map(Attribute.Constant::getValue)
                     .map(b -> (String) b)
                     .collect(Collectors.toSet());
-            System.out.println(ignoredClassNames);
+            System.out.println(excludedClassnames);
 
             JCTree.JCMethodDecl toExecute = (JCTree.JCMethodDecl) trees.getTree(element);
 
             JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) trees.getTree(element.getEnclosingElement());
 
             processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, String.format("Generating event handlers for %s", classDecl.getSimpleName().toString()));
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Ignoring events: " + ignoredClassNames);
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Ignoring events: " + excludedClassnames);
 
             JCTree.JCExpression voidExpression = maker.TypeIdent(TypeTag.VOID);
 
@@ -120,8 +120,8 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .scan()
                     .getClassInfo(type.toString())
                     .getSubclasses()
-                    .filter(info -> !collectionContainsStringIgnoreCase(ignoredClassNames, info.getSimpleName()))
-                    .filter(info -> ignoredPackages.stream().anyMatch(pack -> info.getPackageName().startsWith(pack)))
+                    .filter(info -> !collectionContainsStringIgnoreCase(excludedClassnames, info.getSimpleName()))
+                    .filter(info -> includedPackages.stream().anyMatch(pack -> info.getPackageName().startsWith(pack)))
                     .filter(info -> !info.isAbstract());
 
             if (!includeDeprecated) {
