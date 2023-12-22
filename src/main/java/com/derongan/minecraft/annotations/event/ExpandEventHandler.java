@@ -10,5 +10,5 @@ import java.lang.annotation.Target;
 public @interface ExpandEventHandler {
     boolean includeDeprecated() default false;
     String[] excludedClassnames() default {};
-    String[] excludedPackages() default {};
+    String[] includedPackages() default {};
 }
