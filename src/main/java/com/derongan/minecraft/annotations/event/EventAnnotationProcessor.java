@@ -70,19 +70,30 @@ public class EventAnnotationProcessor extends AbstractProcessor {
             Map<? extends ExecutableElement, ? extends AnnotationValue> elementValuesWithDefaults = processingEnv.getElementUtils().getElementValuesWithDefaults(mirror);
 
 
-            AnnotationValue value = elementValuesWithDefaults.keySet()
+            AnnotationValue excludedClassnames = elementValuesWithDefaults.keySet()
                     .stream()
-                    .filter(b -> b.getSimpleName().toString().equals("exclude"))
+                    .filter(b -> b.getSimpleName().toString().equals("excludedClassnames"))
+                    .map(elementValuesWithDefaults::get).findAny().get();
+
+            AnnotationValue excludedPackages = elementValuesWithDefaults.keySet()
+                    .stream()
+                    .filter(b -> b.getSimpleName().toString().equals("excludedPackages"))
                     .map(elementValuesWithDefaults::get).findAny().get();
 
             // OH god the crap
-            Set<String> ignoredClassNames = ((List<Attribute.Constant>) value.getValue())
+            Set<String> ignoredClassNames = ((List<Attribute.Constant>) excludedClassnames.getValue())
                     .stream()
                     .map(Attribute.Constant::getValue)
                     .map(b -> (String) b)
                     .collect(Collectors.toSet());
             System.out.println(ignoredClassNames);
 
+            Set<String> ignoredPackages = ((List<Attribute.Constant>) excludedClassnames.getValue())
+                    .stream()
+                    .map(Attribute.Constant::getValue)
+                    .map(b -> (String) b)
+                    .collect(Collectors.toSet());
+            System.out.println(ignoredClassNames);
 
             JCTree.JCMethodDecl toExecute = (JCTree.JCMethodDecl) trees.getTree(a);
 
@@ -110,7 +121,7 @@ public class EventAnnotationProcessor extends AbstractProcessor {
                     .getClassInfo(type.toString())
                     .getSubclasses()
                     .filter(info -> !collectionContainsStringIgnoreCase(ignoredClassNames, info.getSimpleName()))
-                    .filter(info -> info.getPackageName().startsWith("org.bukkit.event"))
+                    .filter(info -> ignoredPackages.stream().anyMatch(pack -> info.getPackageName().startsWith(pack)))
                     .filter(info -> !info.isAbstract());
 
             if (!includeDeprecated) {
